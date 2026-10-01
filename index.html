@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#f4f3ec">
+	<title>Studyflow — Make room for focus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<style>
+		:root {
+			color-scheme: light;
+			--paper: #f4f3ec;
+			--ink: #203c32;
+			--muted: #738078;
+			--line: #e3e5dc;
+			--green: #315f4c;
+			--green-dark: #244b3b;
+			--mint: #dfe9df;
+			--coral: #dc775e;
+			--yellow: #ead99b;
+			--white: #fffefa;
+			font-family: "DM Sans", sans-serif;
+		}
+
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			color: var(--ink);
+			background-color: var(--paper);
+			background-image: radial-gradient(#dce0d5 0.7px, transparent 0.7px);
+			background-size: 18px 18px;
+		}
+		button, input { font: inherit; }
+		button { color: inherit; }
+		button:focus-visible, input:focus-visible { outline: 3px solid #e29a78; outline-offset: 3px; }
+		.shell { width: min(1160px, calc(100% - 48px)); margin: 0 auto; }
+		.topbar {
+			height: 84px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			border-bottom: 1px solid rgba(48, 75, 62, .12);
+		}
+		.brand { display: flex; align-items: center; gap: 11px; font: 800 17px Manrope, sans-serif; letter-spacing: 0; }
+		.brand-mark { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: var(--green); color: white; }
+		.brand-mark svg { width: 17px; height: 17px; }
+		.top-meta { display: flex; align-items: center; gap: 22px; color: var(--muted); font-size: 13px; }
+		.day-label { display: flex; align-items: center; gap: 8px; }
+		.day-label svg { width: 16px; height: 16px; }
+		.streak { display: flex; align-items: center; gap: 7px; color: #785c2f; font-weight: 700; }
+		.streak svg { width: 17px; height: 17px; color: #cb8747; }
+
+		main { padding: 47px 0 34px; }
+		.intro { display: flex; align-items: end; justify-content: space-between; margin-bottom: 27px; }
+		.eyebrow { margin: 0 0 8px; color: var(--green); font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+		h1 { margin: 0; font: 700 clamp(26px, 3vw, 34px)/1.2 Manrope, sans-serif; letter-spacing: 0; }
+		.intro-note { margin: 0 0 2px; color: var(--muted); font-size: 14px; }
+		.workspace { display: grid; grid-template-columns: minmax(0, 1.48fr) minmax(280px, .82fr); gap: 18px; align-items: stretch; }
+
+		.timer-panel {
+			position: relative;
+			overflow: hidden;
+			min-height: 510px;
+			padding: 29px 34px 26px;
+			color: #f7f8ef;
+			background: var(--green);
+			border-radius: 10px;
+			isolation: isolate;
+		}
+		.timer-panel::before {
+			content: "";
+			position: absolute;
+			z-index: -1;
+			width: 360px;
+			height: 360px;
+			right: -130px;
+			top: -170px;
+			border: 1px solid rgba(244, 243, 236, .12);
+			border-radius: 50%;
+			box-shadow: 0 0 0 28px rgba(244, 243, 236, .035), 0 0 0 56px rgba(244, 243, 236, .025);
+		}
+		.timer-top { display: flex; justify-content: space-between; align-items: center; }
+		.mode-tabs { display: flex; gap: 5px; padding: 4px; border-radius: 7px; background: rgba(17, 47, 35, .28); }
+		.mode-button { border: 0; border-radius: 5px; padding: 9px 12px; color: rgba(255,255,255,.68); background: transparent; font-size: 12px; font-weight: 600; cursor: pointer; transition: color .2s, background .2s; }
+		.mode-button[aria-pressed="true"] { color: var(--ink); background: #f5f4eb; }
+		.icon-button { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.25); border-radius: 7px; color: white; background: rgba(255,255,255,.07); cursor: pointer; transition: background .2s; }
+		.icon-button:hover { background: rgba(255,255,255,.16); }
+		.icon-button svg { width: 18px; height: 18px; }
+		.timer-core { display: grid; justify-items: center; padding-top: 33px; }
+		.timer-ring {
+			--progress: 100%;
+			width: 244px;
+			aspect-ratio: 1;
+			display: grid;
+			place-items: center;
+			border-radius: 50%;
+			background: conic-gradient(#e9d99b var(--progress), rgba(255,255,255,.17) 0);
+			position: relative;
+			transition: background .35s linear;
+		}
+		.timer-ring::before { content: ""; position: absolute; inset: 8px; border-radius: inherit; background: var(--green); }
+		.timer-readout { position: relative; text-align: center; }
+		.time { font: 600 59px/1 Manrope, sans-serif; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+		.timer-caption { margin-top: 11px; color: rgba(247,248,239,.72); font-size: 12px; }
+		.timer-controls { display: flex; align-items: center; gap: 12px; margin-top: 25px; }
+		.start-button { min-width: 148px; height: 48px; display: flex; justify-content: center; align-items: center; gap: 9px; border: 0; border-radius: 6px; color: var(--ink); background: #f5f4eb; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform .18s, background .18s; }
+		.start-button:hover { transform: translateY(-1px); background: white; }
+		.start-button svg { width: 16px; height: 16px; }
+		.reset-button { width: 43px; height: 43px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.25); border-radius: 6px; color: white; background: transparent; cursor: pointer; }
+		.reset-button:hover { background: rgba(255,255,255,.1); }
+		.reset-button svg { width: 17px; height: 17px; }
+		.timer-footer { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-top: 25px; padding-top: 17px; border-top: 1px solid rgba(255,255,255,.16); color: rgba(247,248,239,.76); font-size: 12px; }
+		.cycle-dots { display: flex; gap: 7px; }
+		.cycle-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.3); }
+		.cycle-dot.done { background: var(--yellow); }
+
+		.side-panel { display: flex; flex-direction: column; gap: 18px; }
+		.tasks-panel { flex: 1; min-height: 305px; padding: 24px 23px 21px; background: var(--white); border: 1px solid #e6e7df; border-radius: 10px; }
+		.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+		.panel-heading h2 { margin: 0; font: 700 16px Manrope, sans-serif; letter-spacing: 0; }
+		.task-count { color: var(--muted); font-size: 12px; }
+		.task-list { display: grid; gap: 2px; margin: 17px 0 13px; padding: 0; list-style: none; }
+		.task-row { min-height: 43px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eff0e9; }
+		.task-check { appearance: none; flex: 0 0 auto; width: 17px; height: 17px; margin: 0; border: 1px solid #c6cec3; border-radius: 5px; cursor: pointer; }
+		.task-check:checked { border-color: var(--green); background-color: var(--green); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m2.2 6 2.3 2.3 5.3-5.1' fill='none' stroke='white' stroke-width='1.7'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 12px; }
+		.task-name { min-width: 0; flex: 1; overflow: hidden; color: #40544a; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+		.task-row.completed .task-name { color: #9ca69d; text-decoration: line-through; }
+		.task-remove { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 5px; color: #9aa49b; background: transparent; opacity: 0; cursor: pointer; }
+		.task-row:hover .task-remove, .task-remove:focus-visible { opacity: 1; }
+		.task-remove:hover { color: #a54e3f; background: #f8ece8; }
+		.task-remove svg { width: 15px; height: 15px; }
+		.add-task { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 0; border: 0; color: var(--green); background: transparent; text-align: left; font-size: 12px; font-weight: 700; cursor: pointer; }
+		.add-task svg { width: 15px; height: 15px; }
+		.task-form { display: flex; gap: 7px; margin-top: 5px; }
+		.task-form input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid #dfe4dc; border-radius: 5px; color: var(--ink); background: #fff; font-size: 12px; }
+		.task-form button { flex: 0 0 auto; padding: 0 12px; border: 0; border-radius: 5px; color: white; background: var(--green); font-size: 12px; font-weight: 700; cursor: pointer; }
+
+		.quote-panel { position: relative; min-height: 184px; overflow: hidden; display: flex; align-items: end; padding: 21px; border-radius: 10px; color: white; background: #375348 url("https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=85") center 53% / cover; }
+		.quote-panel::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(23,43,34,.83), rgba(23,43,34,.02) 95%); }
+		.quote-copy { position: relative; max-width: 255px; }
+		.quote-copy p { margin: 0 0 8px; font: 600 17px/1.35 Manrope, sans-serif; }
+		.quote-copy span { color: rgba(255,255,255,.75); font-size: 11px; }
+		.bottom-note { display: flex; justify-content: center; gap: 7px; margin-top: 21px; color: var(--muted); font-size: 11px; }
+		.bottom-note svg { width: 14px; height: 14px; color: var(--coral); }
+
+		dialog { width: min(430px, calc(100% - 32px)); padding: 0; border: 1px solid #e2e5dd; border-radius: 10px; color: var(--ink); background: var(--white); box-shadow: 0 20px 70px rgba(27,48,37,.22); }
+		dialog::backdrop { background: rgba(22, 38, 30, .42); backdrop-filter: blur(3px); }
+		.dialog-content { padding: 25px; }
+		.dialog-heading { display: flex; align-items: start; justify-content: space-between; margin-bottom: 21px; }
+		.dialog-heading h2 { margin: 0; font: 700 19px Manrope, sans-serif; }
+		.dialog-heading p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+		.close-dialog { width: 31px; height: 31px; display: grid; place-items: center; border: 0; border-radius: 5px; color: #68766d; background: #f0f2eb; cursor: pointer; }
+		.close-dialog svg { width: 16px; height: 16px; }
+		.settings-fields { display: grid; gap: 14px; }
+		.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #40544a; font-size: 13px; font-weight: 600; }
+		.number-field { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; font-weight: 400; }
+		.number-field input { width: 69px; padding: 8px; border: 1px solid #dfe4dc; border-radius: 5px; color: var(--ink); background: white; text-align: center; font-size: 13px; }
+		.dialog-actions { display: flex; justify-content: end; gap: 8px; margin-top: 23px; }
+		.dialog-actions button { padding: 10px 14px; border: 1px solid #dfe4dc; border-radius: 5px; background: white; font-size: 12px; font-weight: 700; cursor: pointer; }
+		.dialog-actions .save-settings { border-color: var(--green); color: white; background: var(--green); }
+		.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+
+		@media (max-width: 760px) {
+			.shell { width: min(100% - 32px, 550px); }
+			.topbar { height: 68px; }
+			.top-meta { gap: 12px; }
+			.day-label { display: none; }
+			main { padding-top: 32px; }
+			.intro { align-items: start; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+			.workspace { grid-template-columns: 1fr; }
+			.timer-panel { min-height: 485px; padding: 20px 17px 20px; }
+			.mode-button { padding: 9px 10px; }
+			.timer-core { padding-top: 29px; }
+			.timer-ring { width: min(234px, 65vw); }
+			.time { font-size: 54px; }
+			.tasks-panel { min-height: auto; }
+			.task-remove { opacity: 1; }
+			.quote-panel { min-height: 170px; }
+		}
+		@media (max-width: 370px) {
+			.brand { font-size: 15px; }
+			.streak { font-size: 11px; }
+			.timer-panel { padding-inline: 12px; }
+			.mode-button { padding: 9px 7px; font-size: 11px; }
+		}
+		@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+	</style>
+</head>
+<body>
+	<div class="shell">
+		<header class="topbar">
+			<a class="brand" href="#" aria-label="Studyflow home">
+				<span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 6v6l4 2M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+				studyflow
+			</a>
+			<div class="top-meta">
+				<span class="day-label"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 3v4M16.5 3v4M4 9.5h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span id="today"></span></span>
+				<span class="streak"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13.2 2.8c.8 3.1-.2 4.5-1.8 6.2-.6-1.9-1.9-3-3.2-3.9.1 2.7-3.2 5-3.2 9.2a7 7 0 0 0 14 0c0-4.4-2.9-8.2-5.8-11.5Z" fill="currentColor"/><path d="M12.5 12.3c.3 1.5-.5 2.2-1.2 3.1-.3-.8-.8-1.2-1.4-1.6 0 1.4-1.4 2.5-1.4 4.1a3.5 3.5 0 0 0 7 0c0-2-1.3-3.8-3-5.6Z" fill="#f4f3ec"/></svg><span id="streak-count">0</span> sessions</span>
+			</div>
+		</header>
+
+		<main>
+			<section class="intro" aria-labelledby="page-title">
+				<div><p class="eyebrow">Your study space</p><h1 id="page-title">Make room for focus.</h1></div>
+				<p class="intro-note">One small session at a time.</p>
+			</section>
+
+			<div class="workspace">
+				<section class="timer-panel" aria-label="Pomodoro timer">
+					<div class="timer-top">
+						<div class="mode-tabs" role="group" aria-label="Timer mode">
+							<button class="mode-button" type="button" data-mode="focus" aria-pressed="true">Focus</button>
+							<button class="mode-button" type="button" data-mode="short" aria-pressed="false">Short break</button>
+							<button class="mode-button" type="button" data-mode="long" aria-pressed="false">Long break</button>
+						</div>
+						<button class="icon-button" id="open-settings" type="button" aria-label="Timer settings" title="Timer settings">
+							<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" stroke="currentColor" stroke-width="1.7"/><path d="m19.4 13.5 1.1.8-1.1 1.9-1.3-.5a7.7 7.7 0 0 1-1.5.9l-.2 1.4h-2.2l-.3-1.4a7.7 7.7 0 0 1-1.7 0l-.7 1.3-1.9-1.1.5-1.3a7.7 7.7 0 0 1-.9-1.5l-1.4-.2v-2.2l1.4-.3a7.7 7.7 0 0 1 0-1.7l-1.3-.7 1.1-1.9 1.3.5a7.7 7.7 0 0 1 1.5-.9l.2-1.4h2.2l.3 1.4a7.7 7.7 0 0 1 1.7 0l.7-1.3 1.9 1.1-.5 1.3a7.7 7.7 0 0 1 .9 1.5l1.4.2v2.2l-1.4.3a7.7 7.7 0 0 1 0 1.7Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" transform="translate(-1 -1)"/></svg>
+						</button>
+					</div>
+					<div class="timer-core">
+						<div class="timer-ring" id="timer-ring" role="timer" aria-label="25 minutes remaining">
+							<div class="timer-readout"><div class="time" id="time-display">25:00</div><div class="timer-caption" id="timer-caption">Ready when you are</div></div>
+						</div>
+						<div class="timer-controls">
+							<button class="start-button" id="toggle-timer" type="button"><svg id="start-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6 3.8c0-.8.9-1.3 1.6-.9l8.2 5.2a1.1 1.1 0 0 1 0 1.8l-8.2 5.2A1.1 1.1 0 0 1 6 14.2V3.8Z"/></svg><span id="start-label">Start focus</span></button>
+							<button class="reset-button" id="reset-timer" type="button" aria-label="Reset timer" title="Reset timer"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 11a8 8 0 1 1 2.3 5.7M4 5v6h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+						</div>
+					</div>
+					<div class="timer-footer"><span id="cycle-label">Session 1 of 4</span><span class="cycle-dots" id="cycle-dots" aria-label="Completed focus sessions"></span><span id="next-label">Next: short break</span></div>
+				</section>
+
+				<aside class="side-panel">
+					<section class="tasks-panel" aria-labelledby="tasks-title">
+						<div class="panel-heading"><h2 id="tasks-title">Today's tasks</h2><span class="task-count" id="task-count">0 tasks</span></div>
+						<ul class="task-list" id="task-list" aria-live="polite"></ul>
+						<button class="add-task" id="show-task-form" type="button"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Add a task</button>
+						<form class="task-form" id="task-form" hidden><label class="sr-only" for="task-input">Task name</label><input id="task-input" maxlength="80" placeholder="What needs your focus?" autocomplete="off"><button type="submit">Add</button></form>
+					</section>
+					<section class="quote-panel" aria-label="Study inspiration">
+						<div class="quote-copy"><p>“It always seems impossible until it's done.”</p><span>Nelson Mandela</span></div>
+					</section>
+				</aside>
+			</div>
+			<p class="bottom-note"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2.5 12 7l4.8.5-3.6 3.2 1 4.8-4.2-2.4-4.2 2.4 1-4.8-3.6-3.2L8 7l2-4.5Z" fill="currentColor"/></svg>Small steps add up. Take your next one.</p>
+		</main>
+	</div>
+
+	<dialog id="settings-dialog" aria-labelledby="settings-title">
+		<form class="dialog-content" id="settings-form">
+			<div class="dialog-heading"><div><h2 id="settings-title">Timer settings</h2><p>Make each session work for you.</p></div><button class="close-dialog" id="close-settings" type="button" aria-label="Close settings"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button></div>
+			<div class="settings-fields">
+				<label class="setting-row" for="focus-length">Focus session<span class="number-field"><input id="focus-length" type="number" min="1" max="180" required> minutes</span></label>
+				<label class="setting-row" for="short-length">Short break<span class="number-field"><input id="short-length" type="number" min="1" max="60" required> minutes</span></label>
+				<label class="setting-row" for="long-length">Long break<span class="number-field"><input id="long-length" type="number" min="1" max="90" required> minutes</span></label>
+				<label class="setting-row" for="cycle-length">Focus sessions before long break<span class="number-field"><input id="cycle-length" type="number" min="2" max="8" required> sessions</span></label>
+			</div>
+			<div class="dialog-actions"><button id="cancel-settings" type="button">Cancel</button><button class="save-settings" type="submit">Save settings</button></div>
+		</form>
+	</dialog>
+
+	<script>
+		const defaults = { focus: 25, short: 5, long: 15, cycle: 4 };
+		const savedSettings = JSON.parse(localStorage.getItem("studyflow-settings") || "null");
+		const settings = { ...defaults, ...(savedSettings || {}) };
+		const labels = { focus: "Focus", short: "Short break", long: "Long break" };
+		let mode = "focus";
+		let remaining = settings.focus * 60;
+		let intervalId = null;
+		let endsAt = 0;
+		let completedSessions = Number(localStorage.getItem("studyflow-sessions") || 0);
+		let cycleProgress = Number(localStorage.getItem("studyflow-cycle") || 0);
+		let tasks = JSON.parse(localStorage.getItem("studyflow-tasks") || "[]");
+
+		const timeDisplay = document.querySelector("#time-display");
+		const timerRing = document.querySelector("#timer-ring");
+		const startButton = document.querySelector("#toggle-timer");
+		const startLabel = document.querySelector("#start-label");
+		const startIcon = document.querySelector("#start-icon");
+		const settingsDialog = document.querySelector("#settings-dialog");
+		const taskForm = document.querySelector("#task-form");
+		const taskInput = document.querySelector("#task-input");
+
+		document.querySelector("#today").textContent = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "short", day: "numeric" }).format(new Date());
+
+		function formatTime(seconds) {
+			const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
+			const remainder = (seconds % 60).toString().padStart(2, "0");
+			return `${minutes}:${remainder}`;
+		}
+
+		function renderTimer() {
+			timeDisplay.textContent = formatTime(remaining);
+			timerRing.style.setProperty("--progress", `${Math.max(0, remaining / (settings[mode] * 60)) * 100}%`);
+			timerRing.setAttribute("aria-label", `${Math.floor(remaining / 60)} minutes and ${remaining % 60} seconds remaining`);
+			document.title = `${formatTime(remaining)} · ${labels[mode]} — Studyflow`;
+			document.querySelector("#timer-caption").textContent = intervalId ? `${labels[mode]} in progress` : remaining === settings[mode] * 60 ? "Ready when you are" : "Paused · pick it back up";
+			document.querySelector("#cycle-label").textContent = `Session ${cycleProgress + 1} of ${settings.cycle}`;
+			document.querySelector("#next-label").textContent = mode === "focus" ? `Next: ${cycleProgress + 1 >= settings.cycle ? "long break" : "short break"}` : "Next: focus session";
+			document.querySelector("#streak-count").textContent = completedSessions;
+			document.querySelectorAll(".cycle-dot").forEach((dot, index) => dot.classList.toggle("done", index < cycleProgress));
+		}
+
+		function renderDots() {
+			const dots = document.querySelector("#cycle-dots");
+			dots.replaceChildren(...Array.from({ length: settings.cycle }, () => {
+				const dot = document.createElement("span");
+				dot.className = "cycle-dot";
+				return dot;
+			}));
+			renderTimer();
+		}
+
+		function setMode(nextMode) {
+			pauseTimer();
+			mode = nextMode;
+			remaining = settings[mode] * 60;
+			document.querySelectorAll(".mode-button").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.mode === mode)));
+			renderTimer();
+			setStartButton(false);
+		}
+
+		function setStartButton(running) {
+			startLabel.textContent = running ? "Pause timer" : mode === "focus" ? "Start focus" : "Start break";
+			startIcon.innerHTML = running
+				? '<path d="M5.5 4.5h3.3v11H5.5zM11.2 4.5h3.3v11h-3.3z"/>'
+				: '<path d="M6 3.8c0-.8.9-1.3 1.6-.9l8.2 5.2a1.1 1.1 0 0 1 0 1.8l-8.2 5.2A1.1 1.1 0 0 1 6 14.2V3.8Z"/>';
+		}
+
+		function pauseTimer() {
+			if (intervalId) clearInterval(intervalId);
+			intervalId = null;
+			setStartButton(false);
+			renderTimer();
+		}
+
+		function finishTimer() {
+			clearInterval(intervalId);
+			intervalId = null;
+			if (mode === "focus") {
+				completedSessions += 1;
+				cycleProgress = (cycleProgress + 1) % settings.cycle;
+				localStorage.setItem("studyflow-sessions", completedSessions);
+				localStorage.setItem("studyflow-cycle", cycleProgress);
+				setMode(cycleProgress === 0 ? "long" : "short");
+			} else {
+				setMode("focus");
+			}
+			renderTimer();
+			if ("Notification" in window && Notification.permission === "granted") new Notification("Studyflow", { body: `${labels[mode]} complete. Take a moment, then begin again.` });
+		}
+
+		function tick() {
+			remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+			if (remaining === 0) finishTimer();
+			else renderTimer();
+		}
+
+		function startTimer() {
+			if (intervalId) { pauseTimer(); return; }
+			endsAt = Date.now() + remaining * 1000;
+			intervalId = setInterval(tick, 250);
+			setStartButton(true);
+			renderTimer();
+			if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+		}
+
+		startButton.addEventListener("click", startTimer);
+		document.querySelector("#reset-timer").addEventListener("click", () => {
+			pauseTimer();
+			remaining = settings[mode] * 60;
+			renderTimer();
+		});
+		document.querySelectorAll(".mode-button").forEach(button => button.addEventListener("click", () => setMode(button.dataset.mode)));
+
+		document.querySelector("#open-settings").addEventListener("click", () => {
+			document.querySelector("#focus-length").value = settings.focus;
+			document.querySelector("#short-length").value = settings.short;
+			document.querySelector("#long-length").value = settings.long;
+			document.querySelector("#cycle-length").value = settings.cycle;
+			settingsDialog.showModal();
+		});
+		document.querySelector("#close-settings").addEventListener("click", () => settingsDialog.close());
+		document.querySelector("#cancel-settings").addEventListener("click", () => settingsDialog.close());
+		document.querySelector("#settings-form").addEventListener("submit", event => {
+			event.preventDefault();
+			settings.focus = Number(document.querySelector("#focus-length").value);
+			settings.short = Number(document.querySelector("#short-length").value);
+			settings.long = Number(document.querySelector("#long-length").value);
+			settings.cycle = Number(document.querySelector("#cycle-length").value);
+			localStorage.setItem("studyflow-settings", JSON.stringify(settings));
+			cycleProgress = cycleProgress % settings.cycle;
+			localStorage.setItem("studyflow-cycle", cycleProgress);
+			remaining = settings[mode] * 60;
+			renderDots();
+			settingsDialog.close();
+		});
+
+		function renderTasks() {
+			const list = document.querySelector("#task-list");
+			list.replaceChildren(...tasks.map((task, index) => {
+				const item = document.createElement("li");
+				item.className = `task-row${task.done ? " completed" : ""}`;
+				const checkbox = document.createElement("input");
+				checkbox.type = "checkbox";
+				checkbox.className = "task-check";
+				checkbox.checked = task.done;
+				checkbox.setAttribute("aria-label", `Mark ${task.name} ${task.done ? "incomplete" : "complete"}`);
+				checkbox.addEventListener("change", () => { tasks[index].done = checkbox.checked; saveTasks(); });
+				const name = document.createElement("span");
+				name.className = "task-name";
+				name.textContent = task.name;
+				const remove = document.createElement("button");
+				remove.type = "button";
+				remove.className = "task-remove";
+				remove.setAttribute("aria-label", `Remove ${task.name}`);
+				remove.innerHTML = '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.5 6h11M8 6V4.5h4V6m2.5 0-.7 10h-7L6 6m2.5 3v4m3-4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+				remove.addEventListener("click", () => { tasks.splice(index, 1); saveTasks(); });
+				item.append(checkbox, name, remove);
+				return item;
+			}));
+			const completed = tasks.filter(task => task.done).length;
+			document.querySelector("#task-count").textContent = tasks.length ? `${completed} of ${tasks.length} done` : "0 tasks";
+		}
+
+		function saveTasks() {
+			localStorage.setItem("studyflow-tasks", JSON.stringify(tasks));
+			renderTasks();
+		}
+
+		document.querySelector("#show-task-form").addEventListener("click", () => {
+			taskForm.hidden = false;
+			document.querySelector("#show-task-form").hidden = true;
+			taskInput.focus();
+		});
+		taskForm.addEventListener("submit", event => {
+			event.preventDefault();
+			const name = taskInput.value.trim();
+			if (!name) return;
+			tasks.push({ name, done: false });
+			saveTasks();
+			taskInput.value = "";
+			taskForm.hidden = true;
+			document.querySelector("#show-task-form").hidden = false;
+			document.querySelector("#show-task-form").focus();
+		});
+		taskInput.addEventListener("keydown", event => {
+			if (event.key === "Escape") {
+				taskForm.hidden = true;
+				document.querySelector("#show-task-form").hidden = false;
+				document.querySelector("#show-task-form").focus();
+			}
+		});
+
+		renderDots();
+		renderTasks();
+	</script>
+</body>
+</html>
